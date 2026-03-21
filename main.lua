@@ -1,13 +1,18 @@
 function love.load()
-	love.window.setMode(1198, 766, { resizable = true, vsync = 0, minwidth = 400, minheight = 300 })
-
+	-- library used for world physics it's a better box2d by love
 	wf = require("library/windfield/windfield")
+	-- tiled map loader and renderer for love
 	sti = require("library/Simple-Tiled-Implementation/sti")
+	-- we are basically using this library only for the camera capablities
 	cameraFile = require("library/hump/camera")
 
+	--creates a camera object
 	cam = cameraFile()
+	cam:zoom(2)
 
+	-- creates a physics world, with no gravity on either x or y axis, oh physics calculations stop when the object is at a state of rest
 	world = wf.newWorld(0, 0, true)
+	-- draws outlines around your physics hitboxes
 	world:setQueryDebugDrawing(true)
 	world:addCollisionClass("Platform")
 	world:addCollisionClass("Player" --[[, { ignores = { "Platform" } }]])
@@ -16,10 +21,10 @@ function love.load()
 	playerStartY = 192
 
 	sprites = {}
-	sprites.background = love.graphics.newImage("sprites/background.png")
 
+	-- creates a body
 	player = world:newRectangleCollider(playerStartX, playerStartY, 30, 30)
-	player.speed = 240
+	player.speed = 100
 	player:setFixedRotation(true)
 	player:setCollisionClass("Player")
 
@@ -33,29 +38,22 @@ function love.update(dt)
 	gameMap:update(dt)
 
 	local px, py = player:getPosition()
-	cam:lookAt(px, love.graphics.getHeight()/2)
 
-	local vx, vy = 0, 0
-	if love.keyboard.isDown("d") then
-		vx = player.speed
-	elseif love.keyboard.isDown("a") then
-		vx = -player.speed
-	end
+	local zoomLevel = 2
+	local halfW = (love.graphics.getWidth() / 2) / zoomLevel
+	local halfH = (love.graphics.getHeight() / 2) / zoomLevel
 
-	if love.keyboard.isDown("s") then
-		vy = player.speed
-	elseif love.keyboard.isDown("w") then
-		vy = -player.speed
-	end
+	local camX = math.max(halfW, math.min(px, mapWidth - halfW))
+	local camY = math.max(halfH, math.min(py, mapHeight - halfH))
 
-	player:setLinearVelocity(vx, vy)
+	cam:lookAt(camX, camY)
 end
 
 function love.draw()
-	love.graphics.draw(sprites.background, 0, 0)
 	cam:attach()
-		gameMap:drawLayer(gameMap.layers["walls"])
-		world:draw()
+	gameMap:drawLayer(gameMap.layers["background"])
+	gameMap:drawLayer(gameMap.layers["walls"])
+	world:draw()
 	cam:detach()
 end
 
@@ -67,14 +65,33 @@ function spawnPlatform(x, y, width, height)
 	end
 end
 
-function loadMap(mapName) 
+function loadMap(mapName)
 	gameMap = sti("maps/" .. mapName .. ".lua")
-	for i, obj in pairs(gameMap.layers["start"].objects) do 
+
+	mapWidth = gameMap.width * gameMap.tilewidth
+	mapHeight = gameMap.height * gameMap.tileheight
+
+	for i, obj in pairs(gameMap.layers["start"].objects) do
 		playerStartX = obj.x
 		playerStartY = obj.y
 	end
 	player:setPosition(playerStartX, playerStartY)
 	for i, obj in pairs(gameMap.layers["Platforms"].objects) do
 		spawnPlatform(obj.x, obj.y, obj.width, obj.height)
+	end
+end
+
+function love.keypressed(key)
+	local x, y = player:getPosition()
+	local grid = 32
+
+	if key == "d" or key == "right" then
+		player:setPosition(x + grid, y)
+	elseif key == "a" or key == "left" then
+		player:setPosition(x - grid, y)
+	elseif key == "w" or key == "up" then
+		player:setPosition(x, y - grid)
+	elseif key == "s" or key == "down" then
+		player:setPosition(x, y + grid)
 	end
 end
