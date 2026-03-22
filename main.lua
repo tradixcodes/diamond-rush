@@ -17,14 +17,13 @@ function love.load()
 	world:addCollisionClass("Platform")
 	world:addCollisionClass("Player" --[[, { ignores = { "Platform" } }]])
 
-	playerStartX = 32
-	playerStartY = 192
-
 	sprites = {}
 
 	-- creates a body
+	playerStartX, playerStartY = 32, 192
 	player = world:newRectangleCollider(playerStartX, playerStartY, 30, 30)
-	player.speed = 100
+	player.isMoving = false
+	player.speed = 250
 	player:setFixedRotation(true)
 	player:setCollisionClass("Player")
 
