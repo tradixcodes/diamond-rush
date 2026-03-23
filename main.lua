@@ -27,7 +27,7 @@ function love.load()
 	animations.walk = anim8.newAnimation(grid("1-3", 1), 0.05)
 	-- creates a body
 	playerStartX, playerStartY = 32, 192
-	player = world:newRectangleCollider(playerStartX, playerStartY, 28, 28)
+	player = world:newRectangleCollider(playerStartX, playerStartY, 30, 30)
 	player.isMoving = false
 	player.speed = 150
 	player.gridX = playerStartX + 15
@@ -118,8 +118,9 @@ function loadMap(mapName)
 
 	for i, obj in pairs(gameMap.layers["start"].objects) do
 		playerStartX = obj.x
-		-- playerStartY = obj.y
+		playerStartY = obj.y
 	end
+	-- we add 15 because box2d's set position sets the player's coordinates at the middle
 	player:setPosition(playerStartX + 15, playerStartY + 15)
 	for i, obj in pairs(gameMap.layers["Platforms"].objects) do
 		spawnPlatform(obj.x, obj.y, obj.width, obj.height)
