@@ -27,7 +27,7 @@ function love.load()
 	animations.walk = anim8.newAnimation(grid("1-3", 1), 0.05)
 	-- creates a body
 	playerStartX, playerStartY = 32, 192
-	player = world:newRectangleCollider(playerStartX, playerStartY, 30, 30)
+	player = world:newRectangleCollider(playerStartX, playerStartY, 28, 28)
 	player.isMoving = false
 	player.speed = 150
 	player.gridX = playerStartX + 15
@@ -60,16 +60,21 @@ function love.update(dt)
 		if distance < 1 then
 			player:setLinearVelocity(0, 0)
 			player:setPosition(player.targetX, player.targetY)
+			
+			player.gridX = player.targetX
+			player.gridY = player.targetY
+
 			player.isMoving = false
 			player.animation:gotoFrame(1)
 		else
-			local angle = math.atan2(dy, dx)
-			local vx = math.cos(angle) * player.speed
-			local vy = math.sin(angle) * player.speed
-			player:setLinearVelocity(vx, vy)
+			local dirX = dx / distance
+			local dirY = dy / distance
+
+			local moveX = dirX * player.speed * dt
+			local moveY = dirY * player.speed * dt
+
+			player:setPosition(px + moveX, py + moveY)
 		end
-	else
-		player:setLinearVelocity(0, 0)
 	end
 
 	local px, py = player:getPosition()
@@ -141,7 +146,7 @@ function love.keypressed(key)
 			player.isMoving = true
 		elseif key == "w" or key == "up" then
 			player.targetY = player.gridY - grid
-			player.isMoving = truee
+			player.isMoving = true
 		elseif key == "s" or key == "down" then
 			player.targetY = player.gridY + grid
 			player.isMoving = true
