@@ -27,9 +27,13 @@ function love.load()
 	animations.walk = anim8.newAnimation(grid("1-3", 1), 0.05)
 	-- creates a body
 	playerStartX, playerStartY = 32, 192
-	player = world:newRectangleCollider(playerStartX, playerStartY, 30, 30)
+	player = world:newRectangleCollider(playerStartX, playerStartY, 28, 28)
 	player.isMoving = false
-	player.speed = 250
+	player.speed = 150
+	player.gridX = playerStartX + 15
+	player.gridY = playerStartY + 15
+	player.targetX = player.gridX
+	player.targetY = player.gridY
 	player.animation = animations.walk
 	player.direction = 1
 	player:setFixedRotation(true)
@@ -43,6 +47,30 @@ end
 function love.update(dt)
 	world:update(dt)
 	gameMap:update(dt)
+
+	if player.isMoving then
+		player.animation:update(dt)
+
+		local px, py = player:getPosition()
+
+		local dx = player.targetX - px
+		local dy = player.targetY - py
+		local distance = math.sqrt(dx*dx + dy*dy)
+
+		if distance < 1 then
+			player:setLinearVelocity(0, 0)
+			player:setPosition(player.targetX, player.targetY)
+			player.isMoving = false
+			player.animation:gotoFrame(1)
+		else
+			local angle = math.atan2(dy, dx)
+			local vx = math.cos(angle) * player.speed
+			local vy = math.sin(angle) * player.speed
+			player:setLinearVelocity(vx, vy)
+		end
+	else
+		player:setLinearVelocity(0, 0)
+	end
 
 	local px, py = player:getPosition()
 
@@ -61,7 +89,7 @@ function love.draw()
 	cam:attach()
 	gameMap:drawLayer(gameMap.layers["background"])
 	gameMap:drawLayer(gameMap.layers["walls"])
-	-- world:draw()
+	world:draw()
 	local px, py = player:getPosition()
 	player.animation:draw(sprites.playerSheet, px, py, nil, 1 * player.direction, 1, 16, 16.5)
 	cam:detach()
@@ -90,7 +118,7 @@ function loadMap(mapName)
 
 	for i, obj in pairs(gameMap.layers["start"].objects) do
 		playerStartX = obj.x
-		playerStartY = obj.y
+		-- playerStartY = obj.y
 	end
 	player:setPosition(playerStartX + 15, playerStartY + 15)
 	for i, obj in pairs(gameMap.layers["Platforms"].objects) do
@@ -99,16 +127,23 @@ function loadMap(mapName)
 end
 
 function love.keypressed(key)
-	local x, y = player:getPosition()
-	local grid = 32
+	if not player.isMoving then
+		local grid = 32
 
-	if key == "d" or key == "right" then
-		player:setPosition(x + grid, y)
-	elseif key == "a" or key == "left" then
-		player:setPosition(x - grid, y)
-	elseif key == "w" or key == "up" then
-		player:setPosition(x, y - grid)
-	elseif key == "s" or key == "down" then
-		player:setPosition(x, y + grid)
+		if key == "d" or key == "right" then
+			player.targetX = player.gridX + grid
+			player.direction = 1
+			player.isMoving = true
+		elseif key == "a" or key == "left" then
+			player.targetX = player.gridX - grid
+			player.direction = -1
+			player.isMoving = true
+		elseif key == "w" or key == "up" then
+			player.targetY = player.gridY - grid
+			player.isMoving = truee
+		elseif key == "s" or key == "down" then
+			player.targetY = player.gridY + grid
+			player.isMoving = true
+		end
 	end
 end
