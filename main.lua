@@ -1,3 +1,7 @@
+local dtAccumulator = 0
+local targetFPS = 24
+local targetDelta = 1 / targetFPS
+
 function love.load()
 	-- library used for world physics it's a better box2d by love
 	wf = require("library/windfield/windfield")
@@ -45,6 +49,14 @@ function love.load()
 end
 
 function love.update(dt)
+	dtAccumulator = dtAccumulator + dt
+	while dtAccumulator >= targetDelta do
+		updateGame(targetDelta)
+		dtAccumulator = dtAccumulator - targetDelta
+	end
+end
+
+function updateGame(dt)
 	world:update(dt)
 	gameMap:update(dt)
 
@@ -55,12 +67,12 @@ function love.update(dt)
 
 		local dx = player.targetX - px
 		local dy = player.targetY - py
-		local distance = math.sqrt(dx*dx + dy*dy)
+		local distance = math.sqrt(dx * dx + dy * dy)
 
 		if distance < 1 then
 			player:setLinearVelocity(0, 0)
 			player:setPosition(player.targetX, player.targetY)
-			
+
 			player.gridX = player.targetX
 			player.gridY = player.targetY
 
@@ -105,6 +117,8 @@ function love.draw()
 		love.graphics.getWidth(),
 		"left"
 	)
+	local fps = love.timer.getFPS()
+	love.graphics.print("FPS: " .. fps, 10, 20)
 end
 
 function spawnPlatform(x, y, width, height)

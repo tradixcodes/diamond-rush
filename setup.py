@@ -5,7 +5,7 @@ repos = {
     "library/windfield" : "https://github.com/tradixcodes/windfield",
     "library/Simple-Tiled-Implementation" : "https://github.com/tradixcodes/Simple-Tiled-Implementation",
     "library/anim8" : "https://github.com/tradixcodes/anim8",
-    "library/hump" : "https://github.com/tradixcodes/diamond-rush"
+    "library/hump" : "https://github.com/tradixcodes/hump"
 }
 
 def is_empty(directory):
