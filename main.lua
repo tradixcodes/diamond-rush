@@ -1,7 +1,3 @@
-local dtAccumulator = 0
-local targetFPS = 24
-local targetDelta = 1 / targetFPS
-
 function love.load()
 	-- library used for world physics it's a better box2d by love
 	wf = require("library/windfield/windfield")
@@ -30,22 +26,15 @@ function love.load()
 	animations = {}
 	animations.walk = anim8.newAnimation(grid("1-3", 1), 0.05)
 	-- creates a body
-	playerStartX, playerStartY = 32, 192
-	player = world:newRectangleCollider(playerStartX, playerStartY, 28, 28)
-	player.isMoving = false
-	player.speed = 150
-	player.gridX = playerStartX + 15
-	player.gridY = playerStartY + 15
-	player.targetX = player.gridX
-	player.targetY = player.gridY
-	player.animation = animations.walk
-	player.direction = 1
-	player:setFixedRotation(true)
-	player:setCollisionClass("Player")
+	require("player")
 
 	platforms = {}
 
 	loadMap("aw_level1")
+	
+	dtAccumulator = 0
+	targetFPS = 24
+	targetDelta = 1 / targetFPS
 end
 
 function love.update(dt)
@@ -60,35 +49,7 @@ function updateGame(dt)
 	world:update(dt)
 	gameMap:update(dt)
 
-	if player.isMoving then
-		player.animation:update(dt)
-
-		local px, py = player:getPosition()
-
-		local dx = player.targetX - px
-		local dy = player.targetY - py
-		local distance = math.sqrt(dx * dx + dy * dy)
-
-		if distance < 1 then
-			player:setLinearVelocity(0, 0)
-			player:setPosition(player.targetX, player.targetY)
-
-			player.gridX = player.targetX
-			player.gridY = player.targetY
-
-			player.isMoving = false
-			player.animation:gotoFrame(1)
-		else
-			local dirX = dx / distance
-			local dirY = dy / distance
-
-			local moveX = dirX * player.speed * dt
-			local moveY = dirY * player.speed * dt
-
-			player:setPosition(px + moveX, py + moveY)
-		end
-	end
-
+	playerUpdate(dt)
 	local px, py = player:getPosition()
 
 	local zoomLevel = 2
@@ -107,8 +68,7 @@ function love.draw()
 	gameMap:drawLayer(gameMap.layers["background"])
 	gameMap:drawLayer(gameMap.layers["walls"])
 	world:draw()
-	local px, py = player:getPosition()
-	player.animation:draw(sprites.playerSheet, px, py, nil, 1 * player.direction, 1, 16, 16.5)
+	playerDraw()
 	cam:detach()
 	love.graphics.printf(
 		"Player Hitbox: " .. math.floor(px) .. ", " .. math.floor(py),
@@ -140,9 +100,9 @@ function loadMap(mapName)
 		playerStartY = obj.y
 	end
 	-- we add 15 because box2d's set position sets the player's coordinates at the middle
-	player:setPosition(playerStartX + 15, playerStartY + 15)
+	player:setPosition(playerStartX, playerStartY)
 	for i, obj in pairs(gameMap.layers["Platforms"].objects) do
-		spawnPlatform(obj.x, obj.y, obj.width, obj.height)
+		spawnPlatform(obj.x + (obj.width / 2), obj.y + (obj.height / 2), obj.width, obj.height)
 	end
 end
 
@@ -151,19 +111,36 @@ function love.keypressed(key)
 		local grid = 32
 
 		if key == "d" or key == "right" then
-			player.targetX = player.gridX + grid
-			player.direction = 1
-			player.isMoving = true
+			local nextX = player.gridX + grid
+			if canMoveTo(nextX, player.gridY) then
+				player.targetX = nextX
+				player.direction = 1
+				player.isMoving = true
+			end
 		elseif key == "a" or key == "left" then
-			player.targetX = player.gridX - grid
-			player.direction = -1
-			player.isMoving = true
+			local nextX = player.gridX - grid
+			if canMoveTo(nextX, player.gridY) then
+				player.targetX = nextX
+				player.direction = -1
+				player.isMoving = true
+			end
 		elseif key == "w" or key == "up" then
-			player.targetY = player.gridY - grid
-			player.isMoving = true
+			local nextY = player.gridY - grid
+			if canMoveTo(player.gridX, nextY) then
+				player.targetY = nextY
+				player.isMoving = true
+			end
 		elseif key == "s" or key == "down" then
-			player.targetY = player.gridY + grid
-			player.isMoving = true
+			local nextY = player.gridY + grid
+			if canMoveTo(player.gridX, nextY) then
+				player.targetY = nextY
+				player.isMoving = true
+			end
 		end
 	end
+end
+
+function canMoveTo(x, y) 
+    local colliders = world:queryRectangleArea(x - 14, y - 14, 28, 28, {"Platform"})
+    return #colliders == 0
 end
